@@ -1,19 +1,20 @@
-const { MongoClient } = require("mongodb");
-const client = new MongoClient("mongodb://localhost:27017");
-async function connectDB() {
+const mongoose = require('mongoose');
+
+const connectionString = 'mongodb://localhost:27017/Meetingcode'; // Replace with your details
+
+const connectDB = async () => {
   try {
-    await client.connect();
-    console.log("MongoDB connected");
+    await mongoose.connect(connectionString); // Replace with your actual connection string
+    console.log('MongoDB connected...');
   } catch (err) {
-    console.error("Error while connecting to MongoDB:", err);
-    throw err;
+    console.error(err.message);
+    process.exit(1); // Exit process on error
   }
-}
+};
 
 async function disconnectDB() {
-  if (client) {
-    await client.close();
-    db = null;
+  if (mongoose.connection.readyState) {
+    await mongoose.disconnect();
     console.log("MongoDB connection closed");
   }
 }

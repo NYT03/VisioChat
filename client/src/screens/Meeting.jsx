@@ -1,8 +1,10 @@
+import axios from "axios";
 import "../css/Meeting.css";
 import { useEffect, useState } from 'react';
+import { useNavigate } from "react-router-dom";
 function Meeting() {
   const [date, setdate] = useState(new Date());
-
+  const navigate=useNavigate();
   useEffect(() => {
     const intervalId = setInterval(() => {
       setdate(new Date());
@@ -10,16 +12,25 @@ function Meeting() {
   
     return () => clearInterval(intervalId);
   },[]);
+  function endCall(){
+    const queryParams = new URLSearchParams(window.location.search);
+    const value = queryParams.get('meetingId'); 
+    axios.delete(`http://localhost:3000/newmeeting/${value}`).then(
+      navigate('/endmeeting')
+    ).catch(
+      console.error("Error leaving the meeting")
+    )
+  }
   const showtime=`${date.getHours()}:${date.getMinutes()}`;
   return (
     <main className="flex justify-center flex-col h-screen">
-      <div className="flex justify-center m-8 bg-slate-700 h-auto  rounded-md">
+      <div className="flex justify-center m-8 bg-slate-700 max:h-screen rounded-md">
         <img
-          src="./src/assets/images/Screenshot 2024-06-29 180710.png"
+          src="\src\\assets\\images\\Screenshot 2024-06-29 180710.png"
           className="profile"
         />
       </div>
-      <div className="flex flex-row justify-between align-bottom mt-12 items-center min-h-18 max-h-ful bg-black   text-white p-4">
+      <div className="flex flex-row justify-between align-bottom mt-12 items-center min-h-18 max-h-full bg-black   text-white p-4">
         <p>{showtime}</p>
         <div className="grid grid-flow-col col-auto items-center gap-4 buttom">
           <div
@@ -45,7 +56,7 @@ function Meeting() {
           <button><span className="material-symbols-rounded" id="buttom">screen_share</span></button>
           <button><span className="material-symbols-rounded" id="buttom">back_hand</span></button>
           <button><span className="material-symbols-rounded" id="buttom">more_vert</span></button>
-          <button><span className="material-symbols-rounded bg-red-600 rounded-full pr-2 pl-2 pt-1 pb-1 text-center" id="buttom">call_end</span></button>
+          <button><span className="material-symbols-rounded bg-red-600 rounded-full pr-2 pl-2 pt-1 pb-1 text-center" id="buttom" onClick={endCall}>call_end</span></button>
         </div>
         <div className="grid grid-flow-col col-auto items-center gap-2 buttom">
         <button><span className="material-symbols-rounded" id="buttom">info</span></button>
