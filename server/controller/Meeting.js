@@ -34,17 +34,20 @@ const generateMeetingId = async () => {
   const joinMeeting=async (req,res)=>{
     const meetingCode=req.params.meetingId;
     try{
-      if(await model.findOne(meetingCode))
+      await model.findOne(meetingCode).then(ressult=>
       {
-        console.log("Done")
-        res.status(200).json({"Status":1})
-      }
-      else{
-        res.status(404).json({ "error": "Invalid Meeting code" })
-      }
+        if(ressult!==null){
+          console.log("Done")
+          res.status(200).json({"Status":1})
+          return
+        }
+        else{
+          res.status(404).json({ "error": "Invalid Meeting code" })
+        }
+      })
     }
     catch{
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ "error": "Error" })
     }
   }
   const endMeeting=async (req,res)=>{

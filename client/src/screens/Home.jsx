@@ -1,8 +1,8 @@
 
-import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import Card from "../components/Card";
 import { useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import Card from "../components/Card";
 
 
 function Home() {
@@ -28,9 +28,12 @@ function Home() {
     axios.get(`http://localhost:3000/newmeeting/meetingId=${meetingcode}`)
     .then(res=>{
       console.log(res)
-      if(res.data.Status==1){
-        console.log(meetingcode)
+      if(res.data.Status===1){
+        console.log(meetingcode.current)
         navigate(`/newmeeting/${meetingcode.current}`)
+      }
+      else{
+        console.error("Invalid Meeting code")
       }
     }
     )
@@ -63,9 +66,9 @@ function Home() {
               </button>
               <div className="flex items-center flex-row border focus:outline rounded-md focus:outline-black p-1">
               <span className="material-symbols-rounded flex justify-normal items-center ml-2 mr-2 focus:fill-none">keyboard</span>
-              <input className="w-56 h-10 text-lg  p-1 fill-none bg-transparent outline-none rounded-lg text-white meetingmeetingcode" id="meetingmeetingcode" />
+              <input className="w-56 h-10 text-lg  p-1 fill-none bg-transparent outline-none rounded-lg text-white meetingmeetingcode" id="meetingmeetingcode" value={meetingcode.current}/>
               </div>
-              <button className=" text-2xl bg-slate-100 text-black p-1  pl-4 pr-4 rounded-sm hover:text-white hover:bg-gray-600" onClick={joinmeeting} value={meetingcode}>Join</button>
+              <button className=" text-2xl bg-slate-100 text-black p-1  pl-4 pr-4 rounded-sm hover:text-white hover:bg-gray-600" onClick={joinmeeting} >Join</button>
             </div>
           </div>
             <Card/>
