@@ -42,19 +42,19 @@ function Home() {
     <div className=" bg-slate-800 text-white min-h-screen">
       <nav className="flex justify-start">
         <img
-          src="../src/assets/google-meet.svg"
-          className="scale-75"
+          src="../src/assets/VisioChat logo.svg"
+          className="m-3 w-16 border rounded-lg "
           alt="logo"
         />
         <p className="flex jus item-center justify-center mt-7 text-3xl break-words space-x-3">
-          <Link to={"/"}><b>Google</b>
-          <span>Meet</span></Link>
+          <Link to={"/"}><b>Visio</b>
+          <span>chat</span></Link>
         </p>
       </nav>
       <main>
         <div className="flex flex-row">
           <div className="flex flex-col justify-center items-start text-5xl mt max-h-fit ">
-            <p className="flex ml-8 mt-5 flex-wrap w-3/4">
+            <p className="flex ml-8 mt-32 flex-wrap w-3/4">
               Video calls and meeting for everyone
             </p>
             <p className="flex ml-8 mt-6 flex-wrap text-xl w-2/3">

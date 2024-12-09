@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState,useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/Meeting.css";
 function Meeting() {
@@ -7,7 +7,12 @@ function Meeting() {
   const [micPermission, setMicPermission] = useState(false);
   const [cameraPermission, setCameraPermission] = useState(false);
   const videoRef = useRef(null);
+  const webcamRef=useRef(null);
   const navigate = useNavigate();
+  const [capturing, setCapturing] = useState(false);
+  const [recordedChunks, setRecordedChunks] = useState([]);
+  const [devices, setDevices] = useState([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState("");
   useEffect(() => {
     const intervalId = setInterval(() => {
       setdate(new Date());
@@ -16,6 +21,16 @@ function Meeting() {
     return () => clearInterval(intervalId);
   }, []);
   
+  useEffect(() => {
+    navigator.mediaDevices.enumerateDevices().then((devices) => {
+      const videoDevices = devices.filter((device) => device.kind === "videoinput");
+      setDevices(videoDevices);
+      if (videoDevices.length > 0) {
+        setSelectedDeviceId(videoDevices[0].deviceId); // Default to the first camera
+      }
+    });
+  }, []);
+
   useEffect(() => {
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
@@ -26,6 +41,7 @@ function Meeting() {
   }, []);
 
   const requestMicPermission = async () => {
+    if(!micPermission){
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setMicPermission(true);
@@ -34,35 +50,56 @@ function Meeting() {
       setMicPermission(false);
       // setMicError('Microphone permission denied or error occurred: ' + err.message);
     }
+  }
+  else{
+    setMicPermission(false);
+  }
   };
+  const handleDataAvailable = useCallback(
+    ({ data }) => {
+      if (data.size > 0) {
+        setRecordedChunks((prev) => prev.concat(data));
+      }
+    },
+    [setRecordedChunks]
+  );
+  const handleStartCaptureClick = useCallback(() => {
+    setCapturing(true);
+    videoRef.current = new MediaRecorder(webcamRef.current.stream, {
+      mimeType: "video/webm",
+    });
+    videoRef.current.addEventListener(
+      "dataavailable",
+      handleDataAvailable
+    );
+    videoRef.current.start();
+  }, [webcamRef,handleDataAvailable,setCapturing, videoRef]);
+
+  const handleStopCaptureClick = useCallback(() => {
+    videoRef.current.stop();
+    setCapturing(false);
+  }, [videoRef,setCapturing]);
 
   const requestCameraPermission = async () => {
     if(!cameraPermission){
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     setCameraPermission(true);
-    console.log(stream)
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream.getTracks(); // Assign the stream to the video element
-      videoRef.current.play(); // Ensure the video starts playing
-    }
+    handleStartCaptureClick()
   } catch (err) {
     console.error("Error accessing camera: ", err);
     setCameraPermission(false);
   }}
   else{
-    if (videoRef.current) {
-      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-    }
+    handleStopCaptureClick()
+    setCameraPermission(false);
   }
 };
 
-
   const askpermission = async (type) => {
-    if (type === "mic" && !micPermission) {
+    if (type === "mic") {
       console.log("mic requested");
       await requestMicPermission();
-    } else if (type === "camera" && !cameraPermission) {
+    } else if (type === "camera") {
       console.log("camera requested");
       await requestCameraPermission();
     } else {
@@ -95,7 +132,7 @@ function Meeting() {
           <video ref={videoRef} src={videoRef} autoPlay playsInline className="profile" />
         ) : (
           <img
-            src="src\\assets\\images\\Screenshot 2024-06-29 180710.png"
+            srcSet="src/assets/images/profile.png"
             className="profile"
             alt="React Logo"
           />
