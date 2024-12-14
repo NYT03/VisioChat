@@ -1,34 +1,38 @@
-import { useContext } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-// import CurrentUserContext from './../context/UserContext';
-import './App.css';
+import "./App.css";
+import Socket from "./context/Socket.jsx";
+import { useUserContext } from "./context/UserContext.jsx";
 import Home from "./screens/Home.jsx";
-import Meeting from './screens/Meeting.jsx';
-import MeetingEnd from './screens/MeetingEnd.jsx';
-
+import Meeting from "./screens/Meeting.jsx";
+import MeetingEnd from "./screens/MeetingEnd.jsx";
 function App() {
-  // const {currentUser,setCurrentUser} = useContext(CurrentUserContext);
-  // setCurrentUser(true);
-  return(
+  const {user} = useUserContext();
+  const {currentUser, setCurrentUser}=user; 
+  return (
     <BrowserRouter>
-    {
-      // currentUser?(
-      <Routes>
-        {/* <CurrentUserContext.Provider value={currentUser}> */}
-          <Route exact path='/' element={<Home/>}/>
-          <Route path='/newmeeting/:id' element={<Meeting/>}/>
-          <Route path='/endmeeting' element={<MeetingEnd/>}/>
-          {/* </CurrentUserContext.Provider> */}
-       </Routes>
-      //  ):
-      //  (<Routes>
-      //   <Route exact path='/' element={<Login/>}/>
-      //   <Route exact path='/signup' element={<Signup/>}/>
-      //  </Routes>
-      //  )
-    }
-   </BrowserRouter>
-  )
+      <Socket>
+        {
+          (currentUser.email!==null)?(
+            <Routes>
+            <Route exact path="/" element={<Home />} />
+            <Route path="/newmeeting/:id" element={<Meeting />} />
+            <Route path="/endmeeting" element={<MeetingEnd />} />
+          </Routes>
+           ):
+           <div>
+            <h1 className="text-white">
+            comming soon
+            </h1>
+           </div>
+          //  (<Routes>
+          //   <Route exact path='/' element={<Login/>}/>
+          //   <Route exact path='/signup' element={<Signup/>}/>
+          //  </Routes>
+          //  )
+          }
+      </Socket>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;

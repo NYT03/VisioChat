@@ -1,155 +1,158 @@
-import axios from "axios";
-import { useEffect, useRef, useState,useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import ReactPlayer from "react-player";
 import { useNavigate } from "react-router-dom";
 import "../css/Meeting.css";
+import {
+  askPermission,
+  endCall,
+  getDevices,
+  getStreamUtil,
+} from "../Functions/Meeting";
+
 function Meeting() {
   const [date, setdate] = useState(new Date());
   const [micPermission, setMicPermission] = useState(false);
   const [cameraPermission, setCameraPermission] = useState(false);
-  const videoRef = useRef(null);
-  const webcamRef=useRef(null);
+  const [stream, setStream] = useState("");
+  const [videoDeviceList, setVideoDeviceList] = useState([]);
+  const [AudioDeviceList, setAudioDeviceList] = useState([]);
+  const [selectedVideoDeviceId, setSelectedVideoDeviceId] = useState("");
+  const [selectedAudioDeviceId, setSelectedAudioDeviceId] = useState("");
   const navigate = useNavigate();
-  const [capturing, setCapturing] = useState(false);
-  const [recordedChunks, setRecordedChunks] = useState([]);
-  const [devices, setDevices] = useState([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState("");
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setdate(new Date());
-    }, 60000);
+  const [isMicSelectVisible, setIsMicSelectVisible] = useState(false);
+  const [isCameraSelectVisible, setIsCameraSelectVisible] = useState(false);
 
+  const toggleMicSelectVisibility = () =>
+    setIsMicSelectVisible(!isMicSelectVisible);
+  const toggleCameraSelectVisibility = () =>
+    setIsCameraSelectVisible(!isCameraSelectVisible);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => setdate(new Date()), 59000);
     return () => clearInterval(intervalId);
   }, []);
-  
+
   useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then((devices) => {
-      const videoDevices = devices.filter((device) => device.kind === "videoinput");
-      setDevices(videoDevices);
-      if (videoDevices.length > 0) {
-        setSelectedDeviceId(videoDevices[0].deviceId); // Default to the first camera
-      }
+    getDevices({
+      setVideoDeviceList,
+      setAudioDeviceList,
+      setSelectedVideoDeviceId,
+      setSelectedAudioDeviceId,
     });
   }, []);
 
-  useEffect(() => {
+  const getStream = useCallback(async () => {
+    await getStreamUtil({
+      cameraPermission,
+      micPermission,
+      selectedVideoDeviceId,
+      selectedAudioDeviceId,
+      setStream,
+    });
+  }, [
+    selectedVideoDeviceId,
+    selectedAudioDeviceId,
+    cameraPermission,
+    micPermission,
+  ]);
+
+  useCallback(() => {
+    getStream();
     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = videoRef.current.srcObject.getTracks();
-        tracks.forEach(track => track.stop());
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
       }
     };
-  }, []);
+  },[getStream,stream]);
 
-  const requestMicPermission = async () => {
-    if(!micPermission){
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setMicPermission(true);
-      stream.getTracks().forEach((track) => track.stop()); // Stop the stream immediately
-    } catch (err) {
-      setMicPermission(false);
-      // setMicError('Microphone permission denied or error occurred: ' + err.message);
-    }
-  }
-  else{
-    setMicPermission(false);
-  }
-  };
-  const handleDataAvailable = useCallback(
-    ({ data }) => {
-      if (data.size > 0) {
-        setRecordedChunks((prev) => prev.concat(data));
-      }
-    },
-    [setRecordedChunks]
-  );
-  const handleStartCaptureClick = useCallback(() => {
-    setCapturing(true);
-    videoRef.current = new MediaRecorder(webcamRef.current.stream, {
-      mimeType: "video/webm",
+  const handlePermission = async (type) => {
+    await askPermission({
+      type,
+      micPermission,
+      setMicPermission,
+      cameraPermission,
+      setCameraPermission,
     });
-    videoRef.current.addEventListener(
-      "dataavailable",
-      handleDataAvailable
-    );
-    videoRef.current.start();
-  }, [webcamRef,handleDataAvailable,setCapturing, videoRef]);
-
-  const handleStopCaptureClick = useCallback(() => {
-    videoRef.current.stop();
-    setCapturing(false);
-  }, [videoRef,setCapturing]);
-
-  const requestCameraPermission = async () => {
-    if(!cameraPermission){
-  try {
-    setCameraPermission(true);
-    handleStartCaptureClick()
-  } catch (err) {
-    console.error("Error accessing camera: ", err);
-    setCameraPermission(false);
-  }}
-  else{
-    handleStopCaptureClick()
-    setCameraPermission(false);
-  }
-};
-
-  const askpermission = async (type) => {
-    if (type === "mic") {
-      console.log("mic requested");
-      await requestMicPermission();
-    } else if (type === "camera") {
-      console.log("camera requested");
-      await requestCameraPermission();
-    } else {
-      console.log("notho");
-    }
   };
+
+  const handleEndCall = () => {
+    endCall({ 
+      navigate, 
+      setCameraPermission, 
+      setMicPermission,
+      stream  // Pass the stream to properly clean up
+    });
+  };
+
   const showtime = `${date.getHours()}:${date.getMinutes()}`;
 
-  const endCall = () => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const value = queryParams.get("meetingId");
-    axios
-      .delete(`http://localhost:3000/newmeeting/${value}`)
-      .then(() => navigate("/endmeeting"))
-      .catch(() => console.error("Error leaving the meeting"))
-      .finally(() => {
-        if (videoRef.current && videoRef.current.srcObject) {
-          const tracks = videoRef.current.srcObject.getTracks();
-          tracks.forEach(track => track.stop());
-        }
-        setCameraPermission(false);
-        setMicPermission(false);
-      });
-      
-  };
   return (
-    <main className="flex justify-center flex-col h-screen">
-      <div className="flex justify-center m-8 bg-slate-700 max:h-screen rounded-md">
-        {cameraPermission ? (
-          <video ref={videoRef} src={videoRef} autoPlay playsInline className="profile" />
-        ) : (
-          <img
-            srcSet="src/assets/images/profile.png"
-            className="profile"
-            alt="React Logo"
-          />
-        )}
+    <main className="flex flex-col h-screen">
+      <div className="flex-grow h-[100%]">
+        <div className="flex justify-center  h-[90%] m-8 mb-0 bg-slate-700 rounded-md">
+          {cameraPermission ? (
+            <ReactPlayer
+              className="profile rounded-md"
+              // autoPlay
+              playing
+              playsInline
+              muted={!micPermission}
+              url={stream}
+            />
+          ) : (
+            <img
+              srcSet="/src/assets/images/profile.png"
+              className="profile"
+              alt="React Logo"
+            />
+          )}
+        </div>
       </div>
-      <div className="flex flex-row justify-between align-bottom mt-12 items-center min-h-18 max-h-full bg-black   text-white p-4">
+
+      <div className="flex flex-row justify-between items-center min-h-18 bg-black text-white p-4 sticky bottom-0">
         <p>{showtime}</p>
         <div className="grid grid-flow-col col-auto items-center gap-4 buttom">
-          <div className="bg-slate-500 rounded-full gap-3 w-auto mic" id="mic">
-            <button>
+          <div
+            className="bg-slate-500 rounded-full gap-3 w-auto mic relative"
+            id="mic"
+          >
+            {isMicSelectVisible && (
+              <div className="absolute bg-slate-500 rounded-md p-2 w-auto min-w-12 bottom-full text-auto text-nowrap mb-2 z-50">
+                <div className="flex flex-col gap-2">
+                  {AudioDeviceList.map((device) => (
+                    <button
+                      key={device.deviceId}
+                      className={`text-left p-2 hover:bg-slate-600 rounded ${
+                        selectedAudioDeviceId === device.deviceId
+                          ? "bg-slate-600 text-white"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        setSelectedAudioDeviceId(device.deviceId);
+                        toggleMicSelectVisibility();
+                      }}
+                    >
+                      {device.label || "Microphone"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <button
+              onClick={() => {
+                if (isCameraSelectVisible) {
+                  toggleCameraSelectVisibility();
+                }
+                toggleMicSelectVisibility();
+              }}
+            >
               <span className="material-symbols-rounded ml-1">
                 keyboard_arrow_up
               </span>
             </button>
             <button
               onClick={() => {
-                askpermission("mic");
+                handlePermission("mic");
               }}
             >
               <span className="material-symbols-rounded rounded-full bg-slate-700 p-2 mt-0 mb-0 ml-2">
@@ -158,17 +161,46 @@ function Meeting() {
             </button>
           </div>
           <div
-            className="bg-slate-500 rounded-full gap-3 w-auto video"
+            className="bg-slate-500 rounded-full gap-3  w-auto  video relative"
             id="camera"
           >
-            <button>
+            <button
+              onClick={() => {
+                if (isMicSelectVisible) {
+                  toggleMicSelectVisibility();
+                }
+                toggleCameraSelectVisibility();
+              }}
+            >
               <span className="material-symbols-rounded ml-1">
                 keyboard_arrow_up
               </span>
             </button>
+            {isCameraSelectVisible && (
+              <div className="absolute bg-slate-500 rounded-md p-2 w-auto min-w-12 bottom-full text-auto text-nowrap mb-2 z-50">
+                <div className="flex flex-col gap-2">
+                  {videoDeviceList.map((device) => (
+                    <button
+                      key={device.deviceId}
+                      className={`text-left p-2 hover:bg-slate-600 rounded ${
+                        selectedVideoDeviceId === device.deviceId
+                          ? "bg-slate-600 text-white"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        setSelectedVideoDeviceId(device.deviceId);
+                        toggleCameraSelectVisibility();
+                      }}
+                    >
+                      {device.label || "Camera"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <button
               onClick={() => {
-                askpermission("camera");
+                handlePermission("camera");
               }}
             >
               <span className="material-symbols-rounded rounded-full bg-slate-700 p-2 mt-0 mb-0 ml-2">
@@ -205,7 +237,7 @@ function Meeting() {
             <span
               className="material-symbols-rounded bg-red-600 rounded-full pr-2 pl-2 pt-1 pb-1 text-center"
               id="buttom"
-              onClick={endCall}
+              onClick={handleEndCall}
             >
               call_end
             </span>

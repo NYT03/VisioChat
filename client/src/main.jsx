@@ -1,13 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-// import CurrentUserContext from "../context/UserContext.jsx";
 import App from "./App.jsx";
 import "./index.css";
-
+import User from "./context/UserContext.jsx";
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    {/* <CurrentUserContext.Provider> */}
+  // <React.StrictMode>
+    <User>
       <App />
-    {/* </CurrentUserContext.Provider> */}
-  </React.StrictMode>
+    </User>
+  // </React.StrictMode>
 );
