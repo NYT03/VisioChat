@@ -1,5 +1,5 @@
 import axios from "axios";
-
+import { queryString } from 'query-string';
 export const getStreamUtil = async ({
   cameraPermission,
   micPermission,
@@ -108,10 +108,10 @@ export const endCall = async ({ navigate, setCameraPermission, setMicPermission,
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
     }
-
-    // Get the meeting ID from URL
-    const queryParams = new URLSearchParams(window.location.search);
-    const meetingId = queryParams.get("meetingId");
+    const queryParams = queryString.parse(window.location.search);
+    console.log(queryParams);
+    const meetingId = queryParams.meetingId;
+    console.log(meetingId);
     
     if (!meetingId) {
       console.error("No meeting ID found");

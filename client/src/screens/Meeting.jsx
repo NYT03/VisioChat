@@ -74,15 +74,14 @@ function Meeting() {
       setCameraPermission,
     });
   };
-
-  const handleEndCall = () => {
-    endCall({ 
+  const handleEndCall =useCallback(async () => {
+    await endCall({
       navigate, 
       setCameraPermission, 
       setMicPermission,
-      stream  // Pass the stream to properly clean up
+      stream 
     });
-  };
+  },[navigate, setCameraPermission, setMicPermission, stream]);
 
   const showtime = `${date.getHours()}:${date.getMinutes()}`;
 

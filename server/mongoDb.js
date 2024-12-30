@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
+require('dotenv').config();
 
 const connectDB = async () => {
+  const url=process.env.DATABASE_STREAM_URL;
   try {
-    await mongoose.connect("mongodb://localhost:27017/your_database_name", {
+    await mongoose.connect(url, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

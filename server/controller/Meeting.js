@@ -78,6 +78,8 @@ const generateMeetingId = async () => {
     try{
       model.deleteOne(req.params.meetingId).then(
         console.log("Done")
+      ).then(
+        res.status(200).json({"Status":1})
       )
     }
     catch{

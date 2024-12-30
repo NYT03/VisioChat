@@ -9,7 +9,7 @@ const { Server } = require("socket.io");
 const bodyParser = require("body-parser");
 // const io = new Server({ cors: true });
 try {
-  // connectDB();
+  connectDB();
   app.use(bodyParser.json());
   app.use(express.static(path.join(__dirname, "")));
   app.use(cors());
